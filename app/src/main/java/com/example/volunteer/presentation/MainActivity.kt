@@ -10,17 +10,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
-import com.example.volunteer.presentation.theme.VolunteerTheme
 import com.example.volunteer.R
+import com.example.volunteer.presentation.theme.VolunteerTheme
+import com.example.volunteer.presentation.ui.AppDestinations
+import com.example.volunteer.presentation.ui.screens.add.AddQuestScreen
+import com.example.volunteer.presentation.ui.screens.detail.QuestDetailScreen
+import com.example.volunteer.presentation.ui.screens.home.HomeScreen
+import com.example.volunteer.presentation.ui.screens.profile.ProfileScreen
+import com.example.volunteer.presentation.ui.screens.quests.QuestsScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,58 +35,66 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@PreviewScreenSizes
 @Composable
 fun VolunteerApp() {
     var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+    var selectedQuestId by rememberSaveable { mutableStateOf<Int?>(null) }
+    var showAddQuest by rememberSaveable { mutableStateOf(false) }
 
-    NavigationSuiteScaffold(
-        navigationSuiteItems = {
-            AppDestinations.entries.forEach {
-                item(
-                    icon = {
-                        Icon(
-                            painterResource(it.icon),
-                            contentDescription = it.label
-                        )
-                    },
-                    label = { Text(it.label) },
-                    selected = it == currentDestination,
-                    onClick = { currentDestination = it }
-                )
-            }
-        }
-    ) {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            Greeting(
-                name = "Android",
-                modifier = Modifier.padding(innerPadding)
+    when {
+        selectedQuestId != null -> {
+            QuestDetailScreen(
+                questId = selectedQuestId!!,
+                onBack = { selectedQuestId = null }
             )
         }
-    }
-}
-
-enum class AppDestinations(
-    val label: String,
-    val icon: Int,
-) {
-    HOME("Home", R.drawable.ic_home),
-    FAVORITES("Favorites", R.drawable.ic_favorite),
-    PROFILE("Profile", R.drawable.ic_account_box),
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    VolunteerTheme {
-        Greeting("Android")
+        showAddQuest -> {
+            AddQuestScreen(onBack = { showAddQuest = false })
+        }
+        else -> {
+            NavigationSuiteScaffold(
+                navigationSuiteItems = {
+                    AppDestinations.entries.forEach { dest ->
+                        item(
+                            icon = {
+                                Icon(
+                                    painterResource(dest.icon),
+                                    contentDescription = dest.label
+                                )
+                            },
+                            label = { Text(dest.label) },
+                            selected = dest == currentDestination,
+                            onClick = { currentDestination = dest }
+                        )
+                    }
+                }
+            ) {
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    floatingActionButton = {
+                        if (currentDestination == AppDestinations.QUESTS) {
+                            androidx.compose.material3.FloatingActionButton(
+                                onClick = { showAddQuest = true }
+                            ) {
+                                Text("+")
+                            }
+                        }
+                    }
+                ) { innerPadding ->
+                    val contentModifier = Modifier.padding(innerPadding)
+                    when (currentDestination) {
+                        AppDestinations.HOME -> HomeScreen(
+                            onViewQuestDetail = { selectedQuestId = it },
+                            modifier = contentModifier
+                        )
+                        AppDestinations.QUESTS -> QuestsScreen(
+                            onViewDetail = { selectedQuestId = it },
+                            modifier = contentModifier
+                        )
+                        AppDestinations.PROFILE -> ProfileScreen(modifier = contentModifier)
+                    }
+                }
+            }
+        }
     }
 }
