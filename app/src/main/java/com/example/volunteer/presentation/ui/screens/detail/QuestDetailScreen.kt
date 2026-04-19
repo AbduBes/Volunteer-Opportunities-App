@@ -18,6 +18,7 @@ import com.example.volunteer.presentation.viewmodel.QuestsViewModel
 @Composable
 fun QuestDetailScreen(
     questId: Int,
+    source: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: QuestsViewModel = viewModel()

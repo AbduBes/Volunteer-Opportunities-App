@@ -6,22 +6,24 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
-import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import com.example.volunteer.R
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.example.volunteer.presentation.navigation.NavGraph
+import com.example.volunteer.presentation.navigation.Screen
 import com.example.volunteer.presentation.theme.VolunteerTheme
 import com.example.volunteer.presentation.ui.AppDestinations
-import com.example.volunteer.presentation.ui.screens.add.AddQuestScreen
-import com.example.volunteer.presentation.ui.screens.detail.QuestDetailScreen
-import com.example.volunteer.presentation.ui.screens.home.HomeScreen
-import com.example.volunteer.presentation.ui.screens.profile.ProfileScreen
-import com.example.volunteer.presentation.ui.screens.quests.QuestsScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,64 +39,71 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun VolunteerApp() {
-    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
-    var selectedQuestId by rememberSaveable { mutableStateOf<Int?>(null) }
-    var showAddQuest by rememberSaveable { mutableStateOf(false) }
+    val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    val currentRoute = currentDestination?.route
 
-    when {
-        selectedQuestId != null -> {
-            QuestDetailScreen(
-                questId = selectedQuestId!!,
-                onBack = { selectedQuestId = null }
-            )
-        }
-        showAddQuest -> {
-            AddQuestScreen(onBack = { showAddQuest = false })
-        }
-        else -> {
-            NavigationSuiteScaffold(
-                navigationSuiteItems = {
-                    AppDestinations.entries.forEach { dest ->
-                        item(
-                            icon = {
-                                Icon(
-                                    painterResource(dest.icon),
-                                    contentDescription = dest.label
-                                )
-                            },
-                            label = { Text(dest.label) },
-                            selected = dest == currentDestination,
-                            onClick = { currentDestination = dest }
-                        )
+    // Show bottom bar only on these top-level screens
+    val showBottomBar = currentRoute in listOf(
+        Screen.HOME.route,
+        Screen.QUESTS.route,
+        Screen.PROFILE.route
+    )
+
+    if (showBottomBar) {
+        NavigationSuiteScaffold(
+            navigationSuiteItems = {
+                AppDestinations.entries.forEach { dest ->
+                    val destRoute = when (dest) {
+                        AppDestinations.HOME -> Screen.HOME.route
+                        AppDestinations.QUESTS -> Screen.QUESTS.route
+                        AppDestinations.PROFILE -> Screen.PROFILE.route
                     }
-                }
-            ) {
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    floatingActionButton = {
-                        if (currentDestination == AppDestinations.QUESTS) {
-                            androidx.compose.material3.FloatingActionButton(
-                                onClick = { showAddQuest = true }
-                            ) {
-                                Text("+")
+
+                    item(
+                        icon = { Icon(painterResource(dest.icon), contentDescription = dest.label) },
+                        label = { Text(dest.label) },
+                        selected = currentDestination?.hierarchy?.any { it.route == destRoute } == true,
+                        onClick = {
+                            navController.navigate(destRoute) {
+                                // Correct back stack handling
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
                         }
-                    }
-                ) { innerPadding ->
-                    val contentModifier = Modifier.padding(innerPadding)
-                    when (currentDestination) {
-                        AppDestinations.HOME -> HomeScreen(
-                            onViewQuestDetail = { selectedQuestId = it },
-                            modifier = contentModifier
-                        )
-                        AppDestinations.QUESTS -> QuestsScreen(
-                            onViewDetail = { selectedQuestId = it },
-                            modifier = contentModifier
-                        )
-                        AppDestinations.PROFILE -> ProfileScreen(modifier = contentModifier)
-                    }
+                    )
+                }
+            }
+        ) {
+            MainScaffoldContent(navController, currentRoute)
+        }
+    } else {
+        // Render without the bottom navigation bar for details/add screens
+        MainScaffoldContent(navController, currentRoute)
+    }
+}
+
+@Composable
+fun MainScaffoldContent(navController: NavHostController, currentRoute: String?) {
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        floatingActionButton = {
+            if (currentRoute == Screen.QUESTS.route) {
+                FloatingActionButton(
+                    onClick = { navController.navigate(Screen.ADD_QUEST.route) }
+                ) {
+                    Text("+")
                 }
             }
         }
+    ) { innerPadding ->
+        NavGraph(
+            navController = navController,
+            modifier = Modifier.padding(innerPadding)
+        )
     }
 }
