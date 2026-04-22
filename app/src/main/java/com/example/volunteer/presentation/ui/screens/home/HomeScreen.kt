@@ -90,10 +90,11 @@ fun HomeScreen(
                     }
                 }
             }
-        } else {
+        }
+        else {
             items(state.activeQuests) { quest ->
-                ActiveQuestCard(quest = quest, onViewDetail = onViewQuestDetail)
-            }
+                 ActiveQuestCard(quest = quest, onViewDetail = onViewQuestDetail)
+             }
         }
     }
 }

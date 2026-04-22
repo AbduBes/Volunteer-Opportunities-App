@@ -11,4 +11,3 @@ data class Quest(
     val isJoined: Boolean = false,
     val isFavorite: Boolean = false
 )
-
