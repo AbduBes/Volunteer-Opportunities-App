@@ -1,33 +1,52 @@
 package com.example.volunteer.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.volunteer.model.Quest
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+import com.example.volunteer.model.HardcodedData.allQuests as quests
 
-data class HomeUiState(
-    val userName: String = "Alex",
-    val totalHours: Int = 24,
-    val questsCompleted: Int = 7,
-    val activeQuests: List<Quest> = emptyList()
-)
+sealed interface HomeUiState {
+    data object Loading: HomeUiState
+    data class Success(
+        val userName: String = "Alex",
+        val totalHours: Int = 24,
+        val questsCompleted: Int = 7,
+        val activeQuests: List<Quest> = emptyList()
+    ): HomeUiState
+}
 
-class HomeViewModel : ViewModel() {
+sealed interface HomeEvent {
+    data class NavigateToQuestDetail(val questId: Int) : HomeEvent
+}
 
-    private val _uiState = MutableStateFlow(HomeUiState())
+@HiltViewModel
+class HomeViewModel @Inject constructor() : ViewModel() {
+    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    init {
+    private val _events = Channel<HomeEvent>()
+    val events = _events.receiveAsFlow()
+
+    init{
         loadActiveQuests()
     }
 
     private fun loadActiveQuests() {
-        val quests = listOf(
-            Quest(1, "Park Cleanup", "Green City", "Environment", "City Park", 3, "Help clean the local park."),
-            Quest(2, "Food Bank Helper", "Community Aid", "Food", "Downtown", 4, "Sort and distribute food donations.", isJoined = true),
-            Quest(3, "Animal Shelter", "Paws & Care", "Animals", "West Side", 2, "Walk and care for shelter animals.", isJoined = true)
+        _uiState.value = HomeUiState.Success(
+            activeQuests = quests.filter { it.isJoined }
         )
-        _uiState.value = _uiState.value.copy(activeQuests = quests.filter { it.isJoined })
+    }
+    fun onQuestClicked(questId: Int) {
+        viewModelScope.launch {
+            _events.send(HomeEvent.NavigateToQuestDetail(questId))
+        }
     }
 }

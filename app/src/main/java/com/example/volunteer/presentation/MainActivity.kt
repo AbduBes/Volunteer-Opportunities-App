@@ -24,7 +24,9 @@ import com.example.volunteer.presentation.navigation.NavGraph
 import com.example.volunteer.presentation.navigation.Screen
 import com.example.volunteer.presentation.theme.VolunteerTheme
 import com.example.volunteer.presentation.ui.AppDestinations
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
