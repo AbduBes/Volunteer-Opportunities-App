@@ -1,4 +1,4 @@
-package com.example.volunteer.presentation.viewmodel
+package com.example.volunteer.presentation.viewmodel.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -26,7 +26,6 @@ sealed interface HomeUiState {
 sealed interface HomeEvent {
     data class NavigateToQuestDetail(val questId: Int) : HomeEvent
 }
-
 @HiltViewModel
 class HomeViewModel @Inject constructor() : ViewModel() {
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)

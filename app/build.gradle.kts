@@ -1,17 +1,13 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    id("com.google.devtools.ksp")
-    id("com.google.dagger.hilt.android")
+    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "com.example.volunteer"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.volunteer"
@@ -42,21 +38,28 @@ android {
 }
 
 dependencies {
-    val lifecycle_version = "2.8.0" // Use the latest stable version
 
     // Required for viewModelScope
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
-
-    // Optional: for lifecycleScope in Activities/Fragments
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version")
-    implementation("com.google.dagger:hilt-android:2.59.2")
-    ksp("com.google.dagger:hilt-android-compiler:2.59.2")
-    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
-    val nav_version = "2.9.7"
+//    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
+//
+//    // Optional: for lifecycleScope in Activities/Fragments
+//    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
+//    implementation("com.google.dagger:hilt-android:2.56.2")
+//    ksp("com.google.dagger:hilt-android-compiler:2.56.2")
+//
+//    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
+//
+//    implementation("androidx.compose.material:material-icons-extended")
+//    implementation("io.coil-kt.coil3:coil-compose:3.1.0")
+//    implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
+//    implementation("androidx.navigation:navigation-compose:2.9.7")
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.3")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("io.coil-kt.coil3:coil-compose:3.1.0")
-    implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
-    implementation("androidx.navigation:navigation-compose:${nav_version}")
+    implementation("androidx.navigation:navigation-compose:2.9.7")
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

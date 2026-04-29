@@ -12,9 +12,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.volunteer.presentation.ui.screens.add.components.ValidatedTextField
-import com.example.volunteer.presentation.viewmodel.AddQuestEvent
-import com.example.volunteer.presentation.viewmodel.AddQuestUiState
-import com.example.volunteer.presentation.viewmodel.AddQuestViewModel
+import com.example.volunteer.presentation.viewmodel.addQuest.AddQuestEvent
+import com.example.volunteer.presentation.viewmodel.addQuest.AddQuestUiState
+import com.example.volunteer.presentation.viewmodel.addQuest.AddQuestViewModel
 
 // 1. Stateful Component
 @Composable

@@ -13,13 +13,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.volunteer.presentation.ui.screens.home.components.ActiveQuestCard
 import com.example.volunteer.presentation.ui.screens.home.components.StatCard
-import com.example.volunteer.presentation.viewmodel.HomeEvent
-import com.example.volunteer.presentation.viewmodel.HomeUiState
-import com.example.volunteer.presentation.viewmodel.HomeViewModel
-import com.example.volunteer.presentation.viewmodel.QuestDetailViewModel
+import com.example.volunteer.presentation.viewmodel.home.HomeEvent
+import com.example.volunteer.presentation.viewmodel.home.HomeUiState
+import com.example.volunteer.presentation.viewmodel.home.HomeViewModel
 
 @Composable
 fun HomeScreen(

@@ -14,9 +14,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.volunteer.presentation.ui.screens.detail.components.DetailInfoRow
-import com.example.volunteer.presentation.viewmodel.QuestDetailEvent
-import com.example.volunteer.presentation.viewmodel.QuestDetailUiState
-import com.example.volunteer.presentation.viewmodel.QuestDetailViewModel
+import com.example.volunteer.presentation.viewmodel.questDetail.QuestDetailEvent
+import com.example.volunteer.presentation.viewmodel.questDetail.QuestDetailUiState
+import com.example.volunteer.presentation.viewmodel.questDetail.QuestDetailViewModel
 
 // 1. Stateful Component (Logic & Integration)
 @Composable

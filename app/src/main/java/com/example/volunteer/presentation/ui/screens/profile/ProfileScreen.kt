@@ -15,9 +15,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.volunteer.presentation.ui.screens.profile.components.ProfileStatItem
-import com.example.volunteer.presentation.viewmodel.ProfileEvent
-import com.example.volunteer.presentation.viewmodel.ProfileUiState
-import com.example.volunteer.presentation.viewmodel.ProfileViewModel
+import com.example.volunteer.presentation.viewmodel.profile.ProfileEvent
+import com.example.volunteer.presentation.viewmodel.profile.ProfileUiState
+import com.example.volunteer.presentation.viewmodel.profile.ProfileViewModel
 
 // 1. Stateful Component (Logic & Integration)
 @Composable
