@@ -22,6 +22,7 @@ import com.example.volunteer.presentation.viewmodel.profile.ProfileViewModel
 // 1. Stateful Component (Logic & Integration)
 @Composable
 fun ProfileScreen(
+    onNavigateBack: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel() // Use Hilt
 ) {
@@ -33,9 +34,9 @@ fun ProfileScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is ProfileEvent.ShowBadgeDetail -> {
-                    snackbarHostState.showSnackbar("You clicked the ${event.badgeName} badge!")
-                }
+                is ProfileEvent.ShowBadgeDetail -> { /* show dialog/bottomsheet */ }
+                ProfileEvent.Navigate -> { /* nothing for now, Profile has no forward destination */ }
+                ProfileEvent.NavigateBack -> onNavigateBack()
             }
         }
     }
@@ -181,6 +182,8 @@ private fun ProfileScreenContent(
                     }
                 }
             }
+
+            else -> {}
         }
     }
 }

@@ -14,35 +14,30 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.volunteer.presentation.ui.screens.detail.components.DetailInfoRow
-import com.example.volunteer.presentation.viewmodel.questDetail.QuestDetailEvent
+import com.example.volunteer.presentation.viewmodel.questDetail.QuestDetailNavigationEvent
 import com.example.volunteer.presentation.viewmodel.questDetail.QuestDetailUiState
 import com.example.volunteer.presentation.viewmodel.questDetail.QuestDetailViewModel
 
-// 1. Stateful Component (Logic & Integration)
 @Composable
 fun QuestDetailScreen(
     questId: Int,
     source: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: QuestDetailViewModel = hiltViewModel() // Use correct ViewModel via Hilt
+    viewModel: QuestDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Fetch the quest when the screen is composed or if the ID changes
     LaunchedEffect(questId) {
         viewModel.loadQuest(questId)
     }
 
-    // Handle one-time Channel events
     LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
+        viewModel.navigationEvent.collect { event ->
             when (event) {
-                is QuestDetailEvent.NavigateBack -> onBack()
-                is QuestDetailEvent.ShowMessage -> {
-                    snackbarHostState.showSnackbar(event.message)
-                }
+                is QuestDetailNavigationEvent.NavigateBack -> onBack()
+                is QuestDetailNavigationEvent.ShowMessage -> snackbarHostState.showSnackbar(event.message)
             }
         }
     }
@@ -56,7 +51,6 @@ fun QuestDetailScreen(
     )
 }
 
-// 2. Stateless Component (Pure UI)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QuestDetailScreenContent(
@@ -71,9 +65,7 @@ private fun QuestDetailScreenContent(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = {
-                    Text(text = if (uiState is QuestDetailUiState.Success) uiState.quest.title else "Quest Detail")
-                },
+                title = { Text(if (uiState is QuestDetailUiState.Success) uiState.quest.title else "Quest Detail") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -82,25 +74,16 @@ private fun QuestDetailScreenContent(
             )
         }
     ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (uiState) {
-                is QuestDetailUiState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
-                is QuestDetailUiState.Error -> {
-                    Text(
-                        text = uiState.message,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
+                is QuestDetailUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                is QuestDetailUiState.Error -> Text(
+                    text = uiState.message,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.align(Alignment.Center)
+                )
                 is QuestDetailUiState.Success -> {
                     val quest = uiState.quest
-
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -108,44 +91,22 @@ private fun QuestDetailScreenContent(
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text(
-                            text = quest.title,
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = quest.organization,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
+                        Text(text = quest.title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        Text(text = quest.organization, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                         DetailInfoRow(label = "Category", value = quest.category)
                         DetailInfoRow(label = "Location", value = quest.location)
                         DetailInfoRow(label = "Hours Required", value = "${quest.hoursRequired} hours")
-
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    text = "About this Quest",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                                Text(text = "About this Quest", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = quest.description,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                                Text(text = quest.description, style = MaterialTheme.typography.bodyMedium)
                             }
                         }
-
-                        Button(
-                            onClick = onJoinToggle,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            // Automatically reads updated state from the ViewModel
+                        Button(onClick = onJoinToggle, modifier = Modifier.fillMaxWidth()) {
                             Text(if (quest.isJoined) "Leave Quest" else "Join Quest")
                         }
                     }

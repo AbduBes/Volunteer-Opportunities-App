@@ -11,45 +11,14 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// 1. Sealed UI State
-sealed interface AddQuestUiState {
-    data class Form(
-        val title: String = "",
-        val organization: String = "",
-        val location: String = "",
-        val hours: String = "",
-        val description: String = "",
-        val titleError: String? = null,
-        val organizationError: String? = null,
-        val locationError: String? = null,
-        val hoursError: String? = null,
-        val descriptionError: String? = null
-    ) : AddQuestUiState {
-        val isFormValid: Boolean
-            get() = title.isNotBlank()
-                    && organization.isNotBlank()
-                    && location.isNotBlank()
-                    && hours.isNotBlank()
-                    && description.length >= 20
-                    && hours.toIntOrNull() != null
-                    && (hours.toIntOrNull() ?: 0) in 1..100
-    }
-}
-
-// 2. One-Time Events
-sealed interface AddQuestEvent {
-    data object NavigateBack : AddQuestEvent
-    data class ShowMessage(val message: String) : AddQuestEvent
-}
-
 @HiltViewModel
 class AddQuestViewModel @Inject constructor() : ViewModel() {
 
     private val _uiState = MutableStateFlow<AddQuestUiState>(AddQuestUiState.Form())
     val uiState: StateFlow<AddQuestUiState> = _uiState.asStateFlow()
 
-    private val _events = Channel<AddQuestEvent>()
-    val events = _events.receiveAsFlow()
+    private val _navigationEvent = Channel<AddQuestNavigationEvent>(Channel.BUFFERED)
+    val navigationEvent = _navigationEvent.receiveAsFlow()
 
     fun onTitleChange(value: String) {
         val error = if (value.isBlank()) "Title cannot be empty" else null
@@ -83,25 +52,23 @@ class AddQuestViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun updateFormState(update: (AddQuestUiState.Form) -> AddQuestUiState.Form) {
-        val currentState = _uiState.value
-        if (currentState is AddQuestUiState.Form) {
-            _uiState.value = update(currentState)
-        }
+        val currentState = _uiState.value as? AddQuestUiState.Form ?: return
+        _uiState.value = update(currentState)
     }
 
     fun onSubmit() {
         val currentState = _uiState.value as? AddQuestUiState.Form ?: return
         if (currentState.isFormValid) {
             viewModelScope.launch {
-                _events.send(AddQuestEvent.ShowMessage("Quest Added Successfully!"))
-                _events.send(AddQuestEvent.NavigateBack)
+                _navigationEvent.send(AddQuestNavigationEvent.ShowMessage("Quest Added Successfully!"))
+                _navigationEvent.send(AddQuestNavigationEvent.NavigateBack)
             }
         }
     }
 
     fun onBackClicked() {
         viewModelScope.launch {
-            _events.send(AddQuestEvent.NavigateBack)
+            _navigationEvent.send(AddQuestNavigationEvent.NavigateBack)
         }
     }
 }

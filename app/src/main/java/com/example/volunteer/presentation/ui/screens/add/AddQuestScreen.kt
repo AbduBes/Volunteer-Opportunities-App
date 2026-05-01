@@ -12,48 +12,56 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.volunteer.presentation.ui.screens.add.components.ValidatedTextField
-import com.example.volunteer.presentation.viewmodel.addQuest.AddQuestEvent
+import com.example.volunteer.presentation.viewmodel.addQuest.AddQuestNavigationEvent
 import com.example.volunteer.presentation.viewmodel.addQuest.AddQuestUiState
 import com.example.volunteer.presentation.viewmodel.addQuest.AddQuestViewModel
 
-// 1. Stateful Component
 @Composable
 fun AddQuestScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: AddQuestViewModel = hiltViewModel() // Use Hilt
+    viewModel: AddQuestViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Listen to one-time events
     LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
+        viewModel.navigationEvent.collect { event ->
             when (event) {
-                is AddQuestEvent.NavigateBack -> onBack()
-                is AddQuestEvent.ShowMessage -> snackbarHostState.showSnackbar(event.message)
+                is AddQuestNavigationEvent.NavigateBack -> onBack()
+                is AddQuestNavigationEvent.ShowMessage -> snackbarHostState.showSnackbar(event.message)
             }
         }
     }
 
-    // Only render the form if we are in the correct state
     if (uiState is AddQuestUiState.Form) {
         AddQuestScreenContent(
             state = uiState as AddQuestUiState.Form,
             snackbarHostState = snackbarHostState,
-            viewModel = viewModel,
+            onBackClicked = viewModel::onBackClicked,
+            onTitleChange = viewModel::onTitleChange,
+            onOrganizationChange = viewModel::onOrganizationChange,
+            onLocationChange = viewModel::onLocationChange,
+            onHoursChange = viewModel::onHoursChange,
+            onDescriptionChange = viewModel::onDescriptionChange,
+            onSubmit = viewModel::onSubmit,
             modifier = modifier
         )
     }
 }
 
-// 2. Stateless Component
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddQuestScreenContent(
     state: AddQuestUiState.Form,
     snackbarHostState: SnackbarHostState,
-    viewModel: AddQuestViewModel,
+    onBackClicked: () -> Unit,
+    onTitleChange: (String) -> Unit,
+    onOrganizationChange: (String) -> Unit,
+    onLocationChange: (String) -> Unit,
+    onHoursChange: (String) -> Unit,
+    onDescriptionChange: (String) -> Unit,
+    onSubmit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -62,7 +70,7 @@ private fun AddQuestScreenContent(
             TopAppBar(
                 title = { Text("Add New Quest") },
                 navigationIcon = {
-                    IconButton(onClick = viewModel::onBackClicked) {
+                    IconButton(onClick = onBackClicked) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -77,52 +85,15 @@ private fun AddQuestScreenContent(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ValidatedTextField(
-                value = state.title,
-                onValueChange = viewModel::onTitleChange,
-                label = "Quest Title",
-                errorMessage = state.titleError
-            )
-
-            ValidatedTextField(
-                value = state.organization,
-                onValueChange = viewModel::onOrganizationChange,
-                label = "Organization",
-                errorMessage = state.organizationError
-            )
-
-            ValidatedTextField(
-                value = state.location,
-                onValueChange = viewModel::onLocationChange,
-                label = "Location",
-                errorMessage = state.locationError
-            )
-
-            ValidatedTextField(
-                value = state.hours,
-                onValueChange = viewModel::onHoursChange,
-                label = "Hours Required (1–100)",
-                errorMessage = state.hoursError
-            )
-
-            ValidatedTextField(
-                value = state.description,
-                onValueChange = viewModel::onDescriptionChange,
-                label = "Description (min. 20 chars)",
-                errorMessage = state.descriptionError,
-                singleLine = false
-            )
-
+            ValidatedTextField(value = state.title, onValueChange = onTitleChange, label = "Quest Title", errorMessage = state.titleError)
+            ValidatedTextField(value = state.organization, onValueChange = onOrganizationChange, label = "Organization", errorMessage = state.organizationError)
+            ValidatedTextField(value = state.location, onValueChange = onLocationChange, label = "Location", errorMessage = state.locationError)
+            ValidatedTextField(value = state.hours, onValueChange = onHoursChange, label = "Hours Required (1–100)", errorMessage = state.hoursError)
+            ValidatedTextField(value = state.description, onValueChange = onDescriptionChange, label = "Description (min. 20 chars)", errorMessage = state.descriptionError, singleLine = false)
             Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = viewModel::onSubmit,
-                enabled = state.isFormValid,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Button(onClick = onSubmit, enabled = state.isFormValid, modifier = Modifier.fillMaxWidth()) {
                 Text("Submit Quest")
             }
-
             if (!state.isFormValid) {
                 Text(
                     text = "Please fill in all fields correctly to enable submit.",

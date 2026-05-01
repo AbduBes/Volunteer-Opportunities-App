@@ -1,7 +1,6 @@
 package com.example.volunteer.presentation.ui.screens.home
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -15,7 +14,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.volunteer.presentation.ui.screens.home.components.ActiveQuestCard
 import com.example.volunteer.presentation.ui.screens.home.components.StatCard
-import com.example.volunteer.presentation.viewmodel.home.HomeEvent
+import com.example.volunteer.presentation.viewmodel.home.HomeNavigationEvent
 import com.example.volunteer.presentation.viewmodel.home.HomeUiState
 import com.example.volunteer.presentation.viewmodel.home.HomeViewModel
 
@@ -28,11 +27,10 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
-            when(event) {
-                is HomeEvent.NavigateToQuestDetail -> onViewQuestDetail(event.questId)
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                is HomeNavigationEvent.NavigateToQuestDetail -> onViewQuestDetail(event.questId)
             }
-
         }
     }
 
@@ -58,7 +56,6 @@ private fun HomeScreenContent(
                 CircularProgressIndicator()
             }
         }
-
         is HomeUiState.Success -> {
             LazyColumn(
                 modifier = modifier
@@ -126,7 +123,6 @@ private fun HomeScreenContent(
                     }
                 } else {
                     items(uiState.activeQuests) { quest ->
-                        // Pass the action back up to the stateless component parameters
                         ActiveQuestCard(quest = quest, onViewDetail = onQuestClick)
                     }
                 }

@@ -16,29 +16,22 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.volunteer.presentation.ui.screens.quests.components.QuestItem
-import com.example.volunteer.presentation.viewmodel.quest.QuestsEvent
+import com.example.volunteer.presentation.viewmodel.quest.QuestsNavigationEvent
 import com.example.volunteer.presentation.viewmodel.quest.QuestsUiState
 import com.example.volunteer.presentation.viewmodel.quest.QuestsViewModel
 
-// 1. Stateful Component (Logic & Integration)
 @Composable
 fun QuestsScreen(
-    onListClick: () -> Unit,
-    onGridClick: () -> Unit,
     onViewDetail: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: QuestsViewModel = hiltViewModel() // Use Hilt
+    viewModel: QuestsViewModel = hiltViewModel()
 ) {
-    // Lifecycle-aware state collection
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Handle one-time events centrally
     LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
+        viewModel.navigationEvent.collect { event ->
             when (event) {
-                is QuestsEvent.NavigateToQuestDetail -> onViewDetail(event.questId)
-                is QuestsEvent.NavigateToList -> onListClick()
-                is QuestsEvent.NavigateToGrid -> onGridClick()
+                is QuestsNavigationEvent.NavigateToQuestDetail -> onViewDetail(event.questId)
             }
         }
     }
@@ -53,7 +46,6 @@ fun QuestsScreen(
     )
 }
 
-// 2. Stateless Component (Pure UI)
 @Composable
 private fun QuestsScreenContent(
     uiState: QuestsUiState,
@@ -65,26 +57,19 @@ private fun QuestsScreenContent(
 ) {
     when (uiState) {
         is QuestsUiState.Loading -> {
-            Box(
-                modifier = modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
         is QuestsUiState.Success -> {
             LazyColumn(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
+                modifier = modifier.fillMaxSize().padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
                 item {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
@@ -93,7 +78,6 @@ private fun QuestsScreenContent(
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold
                         )
-
                         IconButton(onClick = { onLayoutToggled(false) }) {
                             Icon(
                                 imageVector = Icons.Default.List,
@@ -101,7 +85,6 @@ private fun QuestsScreenContent(
                                 tint = if (!uiState.isGroupedLayout) MaterialTheme.colorScheme.primary else LocalContentColor.current
                             )
                         }
-
                         IconButton(onClick = { onLayoutToggled(true) }) {
                             Icon(
                                 imageVector = Icons.Default.GridView,
@@ -111,7 +94,6 @@ private fun QuestsScreenContent(
                         }
                     }
                 }
-
                 item {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(uiState.categories) { category ->
@@ -123,7 +105,6 @@ private fun QuestsScreenContent(
                         }
                     }
                 }
-
                 if (uiState.allQuests.isEmpty()) {
                     item {
                         Card(
@@ -131,9 +112,7 @@ private fun QuestsScreenContent(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(48.dp),
+                                modifier = Modifier.fillMaxWidth().padding(48.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
@@ -146,7 +125,6 @@ private fun QuestsScreenContent(
                     }
                 } else {
                     if (!uiState.isGroupedLayout) {
-                        // STANDARD LIST LAYOUT
                         items(uiState.allQuests) { quest ->
                             QuestItem(
                                 quest = quest,
@@ -155,9 +133,7 @@ private fun QuestsScreenContent(
                             )
                         }
                     } else {
-                        // GROUPED ROWS LAYOUT (Categories)
                         val groupedQuests = uiState.allQuests.groupBy { it.category }
-
                         groupedQuests.forEach { (category, quests) ->
                             if (quests.isNotEmpty()) {
                                 item {
@@ -168,7 +144,6 @@ private fun QuestsScreenContent(
                                         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                                     )
                                 }
-
                                 item {
                                     LazyRow(
                                         horizontalArrangement = Arrangement.spacedBy(16.dp),
