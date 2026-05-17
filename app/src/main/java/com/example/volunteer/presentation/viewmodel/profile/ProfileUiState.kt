@@ -1,6 +1,7 @@
 package com.example.volunteer.presentation.viewmodel.profile
 
 sealed interface ProfileUiState {
+    data object Init : ProfileUiState
     data object Loading : ProfileUiState
 
     data class Success(

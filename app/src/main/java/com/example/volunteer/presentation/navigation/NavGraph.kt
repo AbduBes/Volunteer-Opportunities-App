@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.volunteer.presentation.ui.screens.add.AddQuestScreen
+import com.example.volunteer.presentation.ui.screens.auth.AuthScreen
 import com.example.volunteer.presentation.ui.screens.detail.QuestDetailScreen
 import com.example.volunteer.presentation.ui.screens.home.HomeScreen
 import com.example.volunteer.presentation.ui.screens.profile.ProfileScreen
@@ -20,9 +21,21 @@ fun NavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.HOME.route,
+        startDestination = Screen.AUTH.route,
         modifier = modifier
     ) {
+        // --- Auth (no bottom nav) ---
+
+        composable(route = Screen.AUTH.route) {
+            AuthScreen(
+                onAuthSuccess = {
+                    navController.navigate(Screen.HOME.route) {
+                        popUpTo(Screen.AUTH.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         // --- Bottom Nav Destinations ---
 
         composable(route = Screen.HOME.route) {
@@ -43,7 +56,12 @@ fun NavGraph(
 
         composable(route = Screen.PROFILE.route) {
             ProfileScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onLoggedOut = {
+                    navController.navigate(Screen.AUTH.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
 

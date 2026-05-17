@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -56,9 +56,19 @@ private fun QuestsScreenContent(
     modifier: Modifier = Modifier
 ) {
     when (uiState) {
+        is QuestsUiState.Init,
         is QuestsUiState.Loading -> {
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
+            }
+        }
+        is QuestsUiState.Error -> {
+            Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = uiState.message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyLarge
+                )
             }
         }
         is QuestsUiState.Success -> {
@@ -80,7 +90,7 @@ private fun QuestsScreenContent(
                         )
                         IconButton(onClick = { onLayoutToggled(false) }) {
                             Icon(
-                                imageVector = Icons.Default.List,
+                                imageVector = Icons.AutoMirrored.Filled.List,
                                 contentDescription = "List View",
                                 tint = if (!uiState.isGroupedLayout) MaterialTheme.colorScheme.primary else LocalContentColor.current
                             )

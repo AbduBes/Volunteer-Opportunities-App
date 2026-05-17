@@ -9,5 +9,6 @@ data class Quest(
     val hoursRequired: Int,
     val description: String,
     val isJoined: Boolean = false,
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    val creatorId: Int? = null
 )

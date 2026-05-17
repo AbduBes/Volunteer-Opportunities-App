@@ -23,6 +23,7 @@ import com.example.volunteer.presentation.viewmodel.profile.ProfileViewModel
 @Composable
 fun ProfileScreen(
     onNavigateBack: () -> Unit = {},
+    onLoggedOut: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel() // Use Hilt
 ) {
@@ -37,6 +38,7 @@ fun ProfileScreen(
                 is ProfileEvent.ShowBadgeDetail -> { /* show dialog/bottomsheet */ }
                 ProfileEvent.Navigate -> { /* nothing for now, Profile has no forward destination */ }
                 ProfileEvent.NavigateBack -> onNavigateBack()
+                ProfileEvent.LoggedOut -> onLoggedOut()
             }
         }
     }
@@ -45,6 +47,7 @@ fun ProfileScreen(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
         onBadgeClick = viewModel::onBadgeClicked,
+        onLogout = viewModel::logout,
         modifier = modifier
     )
 }
@@ -55,8 +58,34 @@ private fun ProfileScreenContent(
     uiState: ProfileUiState,
     snackbarHostState: SnackbarHostState,
     onBadgeClick: (String) -> Unit,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Log out") },
+            text = { Text("Are you sure you want to log out?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        onLogout()
+                    }
+                ) {
+                    Text("Log out")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier.fillMaxSize()
@@ -180,10 +209,45 @@ private fun ProfileScreenContent(
                             }
                         }
                     }
+
+                    item {
+                        OutlinedButton(
+                            onClick = { showLogoutDialog = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Text("Log Out")
+                        }
+                    }
                 }
             }
 
-            else -> {}
+            is ProfileUiState.Init -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            is ProfileUiState.Error -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = uiState.message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
         }
     }
 }

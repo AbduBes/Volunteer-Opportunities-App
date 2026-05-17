@@ -4,14 +4,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.volunteer.model.Quest
 import com.example.volunteer.presentation.ui.screens.home.components.ActiveQuestCard
 import com.example.volunteer.presentation.ui.screens.home.components.StatCard
 import com.example.volunteer.presentation.viewmodel.home.HomeNavigationEvent
@@ -37,6 +36,7 @@ fun HomeScreen(
     HomeScreenContent(
         uiState = uiState,
         onQuestClick = viewModel::onQuestClicked,
+        onDeleteQuest = viewModel::deleteQuest,
         modifier = modifier
     )
 }
@@ -45,15 +45,55 @@ fun HomeScreen(
 private fun HomeScreenContent(
     uiState: HomeUiState,
     onQuestClick: (Int) -> Unit,
+    onDeleteQuest: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var questPendingDelete by remember { mutableStateOf<Quest?>(null) }
+
+    questPendingDelete?.let { quest ->
+        AlertDialog(
+            onDismissRequest = { questPendingDelete = null },
+            title = { Text("Delete Quest") },
+            text = { Text("Are you sure you want to delete \"${quest.title}\"? This action cannot be undone.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteQuest(quest.id)
+                        questPendingDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { questPendingDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     when (uiState) {
+        is HomeUiState.Init,
         is HomeUiState.Loading -> {
             Box(
                 modifier = modifier.fillMaxSize(),
                 contentAlignment = androidx.compose.ui.Alignment.Center
             ) {
                 CircularProgressIndicator()
+            }
+        }
+        is HomeUiState.Error -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                Text(
+                    text = uiState.message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyLarge
+                )
             }
         }
         is HomeUiState.Success -> {
@@ -124,6 +164,44 @@ private fun HomeScreenContent(
                 } else {
                     items(uiState.activeQuests) { quest ->
                         ActiveQuestCard(quest = quest, onViewDetail = onQuestClick)
+                    }
+                }
+
+                item {
+                    Text(
+                        text = "My Quests",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                if (uiState.createdQuests.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                contentAlignment = androidx.compose.ui.Alignment.Center
+                            ) {
+                                Text(
+                                    text = "You haven't created any quests yet.\nTap + on the Quests tab to add one!",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(uiState.createdQuests) { quest ->
+                        ActiveQuestCard(
+                            quest = quest,
+                            onViewDetail = onQuestClick,
+                            onDelete = { questPendingDelete = quest }
+                        )
                     }
                 }
             }

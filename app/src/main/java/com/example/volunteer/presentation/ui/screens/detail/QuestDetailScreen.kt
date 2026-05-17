@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,6 +39,7 @@ fun QuestDetailScreen(
             when (event) {
                 is QuestDetailNavigationEvent.NavigateBack -> onBack()
                 is QuestDetailNavigationEvent.ShowMessage -> snackbarHostState.showSnackbar(event.message)
+                is QuestDetailNavigationEvent.QuestDeleted -> onBack()
             }
         }
     }
@@ -47,6 +49,7 @@ fun QuestDetailScreen(
         snackbarHostState = snackbarHostState,
         onBackClick = viewModel::navigateBack,
         onJoinToggle = viewModel::toggleJoin,
+        onDeleteClick = viewModel::deleteQuest,
         modifier = modifier
     )
 }
@@ -58,8 +61,34 @@ private fun QuestDetailScreenContent(
     snackbarHostState: SnackbarHostState,
     onBackClick: () -> Unit,
     onJoinToggle: () -> Unit,
+    onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete Quest") },
+            text = { Text("Are you sure you want to delete this quest? This action cannot be undone.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDeleteClick()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -70,12 +99,20 @@ private fun QuestDetailScreenContent(
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    if (uiState is QuestDetailUiState.Success && uiState.canDelete) {
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Quest")
+                        }
+                    }
                 }
             )
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (uiState) {
+                is QuestDetailUiState.Init,
                 is QuestDetailUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 is QuestDetailUiState.Error -> Text(
                     text = uiState.message,

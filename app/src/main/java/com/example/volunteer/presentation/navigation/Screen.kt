@@ -1,6 +1,7 @@
 package com.example.volunteer.presentation.navigation
 
 sealed class Screen(val route: String) {
+    data object AUTH : Screen("auth_screen")
     data object HOME : Screen("home_screen")
     data object ADD_QUEST : Screen("add_quest_screen")
     data object PROFILE : Screen("profile_screen")

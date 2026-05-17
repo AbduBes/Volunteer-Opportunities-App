@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import com.example.volunteer.presentation.ui.screens.add.components.ValidatedTextField
 import com.example.volunteer.presentation.viewmodel.addQuest.AddQuestNavigationEvent
 import com.example.volunteer.presentation.viewmodel.addQuest.AddQuestUiState
@@ -29,24 +30,49 @@ fun AddQuestScreen(
         viewModel.navigationEvent.collect { event ->
             when (event) {
                 is AddQuestNavigationEvent.NavigateBack -> onBack()
-                is AddQuestNavigationEvent.ShowMessage -> snackbarHostState.showSnackbar(event.message)
+                is AddQuestNavigationEvent.ShowMessage -> launch { snackbarHostState.showSnackbar(event.message) }
             }
         }
     }
 
-    if (uiState is AddQuestUiState.Form) {
-        AddQuestScreenContent(
-            state = uiState as AddQuestUiState.Form,
-            snackbarHostState = snackbarHostState,
-            onBackClicked = viewModel::onBackClicked,
-            onTitleChange = viewModel::onTitleChange,
-            onOrganizationChange = viewModel::onOrganizationChange,
-            onLocationChange = viewModel::onLocationChange,
-            onHoursChange = viewModel::onHoursChange,
-            onDescriptionChange = viewModel::onDescriptionChange,
-            onSubmit = viewModel::onSubmit,
-            modifier = modifier
-        )
+    val state = uiState
+    when (state) {
+        is AddQuestUiState.Init,
+        is AddQuestUiState.Loading,
+        is AddQuestUiState.Success -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        is AddQuestUiState.Error -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                Text(
+                    text = state.message,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+        is AddQuestUiState.Form -> {
+            AddQuestScreenContent(
+                state = state,
+                snackbarHostState = snackbarHostState,
+                onBackClicked = viewModel::onBackClicked,
+                onTitleChange = viewModel::onTitleChange,
+                onOrganizationChange = viewModel::onOrganizationChange,
+                onLocationChange = viewModel::onLocationChange,
+                onHoursChange = viewModel::onHoursChange,
+                onDescriptionChange = viewModel::onDescriptionChange,
+                onCategorySelected = viewModel::onCategorySelected,
+                onSubmit = viewModel::onSubmit,
+                modifier = modifier
+            )
+        }
     }
 }
 
@@ -61,6 +87,7 @@ private fun AddQuestScreenContent(
     onLocationChange: (String) -> Unit,
     onHoursChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
+    onCategorySelected: (Int) -> Unit,
     onSubmit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -90,6 +117,45 @@ private fun AddQuestScreenContent(
             ValidatedTextField(value = state.location, onValueChange = onLocationChange, label = "Location", errorMessage = state.locationError)
             ValidatedTextField(value = state.hours, onValueChange = onHoursChange, label = "Hours Required (1–100)", errorMessage = state.hoursError)
             ValidatedTextField(value = state.description, onValueChange = onDescriptionChange, label = "Description (min. 20 chars)", errorMessage = state.descriptionError, singleLine = false)
+
+            // Category dropdown
+            var categoryExpanded by remember { mutableStateOf(false) }
+            val selectedCategoryName = state.categories
+                .find { it.first == state.selectedCategoryId }?.second ?: "Select a category"
+            ExposedDropdownMenuBox(
+                expanded = categoryExpanded,
+                onExpandedChange = { categoryExpanded = it }
+            ) {
+                OutlinedTextField(
+                    value = selectedCategoryName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Category") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                    isError = state.categoryError != null,
+                    supportingText = {
+                        if (state.categoryError != null) {
+                            Text(state.categoryError, color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                )
+                ExposedDropdownMenu(
+                    expanded = categoryExpanded,
+                    onDismissRequest = { categoryExpanded = false }
+                ) {
+                    state.categories.forEach { (id, name) ->
+                        DropdownMenuItem(
+                            text = { Text(name) },
+                            onClick = {
+                                onCategorySelected(id)
+                                categoryExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
             Button(onClick = onSubmit, enabled = state.isFormValid, modifier = Modifier.fillMaxWidth()) {
                 Text("Submit Quest")
