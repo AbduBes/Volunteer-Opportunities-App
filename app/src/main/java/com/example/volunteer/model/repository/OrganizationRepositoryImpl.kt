@@ -1,8 +1,8 @@
-package com.example.volunteer.model.data.repository.impl
+package com.example.volunteer.model.repository
 
 import com.example.volunteer.model.data.local.dao.OrganizationDao
 import com.example.volunteer.model.data.local.entity.OrganizationEntity
-import com.example.volunteer.model.data.repository.OrganizationRepository
+import com.example.volunteer.domain.repository.OrganizationRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

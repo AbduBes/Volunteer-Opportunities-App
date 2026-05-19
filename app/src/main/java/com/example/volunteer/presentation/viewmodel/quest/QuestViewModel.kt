@@ -2,11 +2,9 @@ package com.example.volunteer.presentation.viewmodel.quest
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.volunteer.model.Quest
-import com.example.volunteer.model.data.mapper.toQuest
-import com.example.volunteer.model.data.repository.CategoryRepository
-import com.example.volunteer.model.data.repository.QuestRepository
-import com.example.volunteer.model.data.session.SessionManager
+import com.example.volunteer.domain.data.Quest
+import com.example.volunteer.model.data.network.mapper.toQuest
+import com.example.volunteer.model.repository.quest.QuestApiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,9 +17,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class QuestsViewModel @Inject constructor(
-    private val questRepository: QuestRepository,
-    private val categoryRepository: CategoryRepository,
-    private val sessionManager: SessionManager
+    private val questApiRepository: QuestApiRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<QuestsUiState>(QuestsUiState.Init)
@@ -30,37 +26,51 @@ class QuestsViewModel @Inject constructor(
     private val _navigationEvent = Channel<QuestsNavigationEvent>(Channel.BUFFERED)
     val navigationEvent = _navigationEvent.receiveAsFlow()
 
+    // null = not yet loaded from the network (keeps the Loading state visible).
+    private val _allQuests = MutableStateFlow<List<Quest>?>(null)
     private val _selectedCategory = MutableStateFlow("All")
     private val _isGroupedLayout = MutableStateFlow(false)
 
     init {
-        _uiState.value = QuestsUiState.Loading
-        val userId = sessionManager.currentAccountId.value
-        if (userId == null) {
-            _uiState.value = QuestsUiState.Error("Not signed in")
-        } else {
-            observeQuests(userId)
+        observeQuests()
+        loadQuests()
+    }
+
+    private fun observeQuests() {
+        viewModelScope.launch {
+            combine(
+                _allQuests,
+                _selectedCategory,
+                _isGroupedLayout
+            ) { quests, selectedCategory, isGrouped ->
+                if (quests == null) {
+                    QuestsUiState.Loading
+                } else {
+                    val filtered = if (selectedCategory == "All") quests
+                                   else quests.filter { it.category == selectedCategory }
+                    QuestsUiState.Success(
+                        allQuests = filtered,
+                        categories = listOf("All") + quests.map { it.category }.distinct(),
+                        selectedCategory = selectedCategory,
+                        isGroupedLayout = isGrouped
+                    )
+                }
+            }.collect { state ->
+                // Don't let a stale Loading emission overwrite a terminal Error.
+                if (_uiState.value !is QuestsUiState.Error) {
+                    _uiState.value = state
+                }
+            }
         }
     }
 
-    private fun observeQuests(userId: Int) {
+    private fun loadQuests() {
         viewModelScope.launch {
-            combine(
-                questRepository.getAvailableWithDetails(userId),
-                categoryRepository.getAll(),
-                _selectedCategory,
-                _isGroupedLayout
-            ) { quests, categories, selectedCategory, isGrouped ->
-                val allQuests = quests.map { it.toQuest() }
-                val filtered = if (selectedCategory == "All") allQuests
-                               else allQuests.filter { it.category == selectedCategory }
-                QuestsUiState.Success(
-                    allQuests = filtered,
-                    categories = listOf("All") + categories.map { it.name },
-                    selectedCategory = selectedCategory,
-                    isGroupedLayout = isGrouped
-                )
-            }.collect { _uiState.value = it }
+            try {
+                _allQuests.value = questApiRepository.getQuests().map { it.toQuest() }
+            } catch (e: Exception) {
+                _uiState.value = QuestsUiState.Error(e.message ?: "Failed to load quests")
+            }
         }
     }
 
@@ -69,10 +79,8 @@ class QuestsViewModel @Inject constructor(
     }
 
     fun toggleFavorite(questId: Int) {
-        val currentState = _uiState.value as? QuestsUiState.Success ?: return
-        val quest = currentState.allQuests.find { it.id == questId } ?: return
-        viewModelScope.launch {
-            questRepository.updateFavoriteStatus(questId, !quest.isFavorite)
+        _allQuests.value = _allQuests.value?.map { quest ->
+            if (quest.id == questId) quest.copy(isFavorite = !quest.isFavorite) else quest
         }
     }
 

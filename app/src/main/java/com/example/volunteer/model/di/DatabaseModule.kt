@@ -1,4 +1,4 @@
-package com.example.volunteer.model.data.local.di
+package com.example.volunteer.model.di
 
 import android.content.Context
 import androidx.room.Room

@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.volunteer.model.data.local.entity.OrganizationEntity
 import com.example.volunteer.model.data.local.entity.QuestEntity
-import com.example.volunteer.model.data.repository.CategoryRepository
-import com.example.volunteer.model.data.repository.OrganizationRepository
-import com.example.volunteer.model.data.repository.QuestRepository
-import com.example.volunteer.model.data.session.SessionManager
+import com.example.volunteer.domain.repository.CategoryRepository
+import com.example.volunteer.domain.repository.OrganizationRepository
+import com.example.volunteer.domain.repository.QuestRepository
+import com.example.volunteer.model.session.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow

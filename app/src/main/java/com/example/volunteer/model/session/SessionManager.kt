@@ -1,4 +1,4 @@
-package com.example.volunteer.model.data.session
+package com.example.volunteer.model.session
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

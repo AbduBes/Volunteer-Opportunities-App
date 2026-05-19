@@ -1,5 +1,7 @@
 package com.example.volunteer.model
 
+import com.example.volunteer.domain.data.Quest
+
 object HardcodedData {
     val allQuests = listOf(
         Quest(1, "Park Cleanup", "Green City", "Environment", "City Park", 3, "Help clean the local park and plant new flowers."),

@@ -10,7 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.volunteer.model.Quest
+import com.example.volunteer.domain.data.Quest
 import com.example.volunteer.presentation.ui.screens.home.components.ActiveQuestCard
 import com.example.volunteer.presentation.ui.screens.home.components.StatCard
 import com.example.volunteer.presentation.viewmodel.home.HomeNavigationEvent

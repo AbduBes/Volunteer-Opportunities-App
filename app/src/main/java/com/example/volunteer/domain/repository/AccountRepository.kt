@@ -1,4 +1,4 @@
-package com.example.volunteer.model.data.repository
+package com.example.volunteer.domain.repository
 
 sealed interface AuthResult {
     data class Success(val accountId: Int) : AuthResult

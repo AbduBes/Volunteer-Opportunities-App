@@ -1,8 +1,8 @@
-package com.example.volunteer.model.data.repository.impl
+package com.example.volunteer.model.repository
 
 import com.example.volunteer.model.data.local.dao.CategoryDao
 import com.example.volunteer.model.data.local.entity.CategoryEntity
-import com.example.volunteer.model.data.repository.CategoryRepository
+import com.example.volunteer.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

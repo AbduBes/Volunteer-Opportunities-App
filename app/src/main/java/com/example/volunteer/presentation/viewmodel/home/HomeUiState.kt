@@ -1,6 +1,6 @@
 package com.example.volunteer.presentation.viewmodel.home
 
-import com.example.volunteer.model.Quest
+import com.example.volunteer.domain.data.Quest
 
 sealed interface HomeUiState {
     data object Init : HomeUiState

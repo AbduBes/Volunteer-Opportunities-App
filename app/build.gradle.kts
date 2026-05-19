@@ -80,4 +80,15 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+
+// Gson converter
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+
+// OkHttp - the underlying HTTP engine
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+// Logging interceptor - prints requests/responses in Logcat
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }
