@@ -16,7 +16,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -24,7 +23,9 @@ import com.example.volunteer.presentation.navigation.NavGraph
 import com.example.volunteer.presentation.navigation.Screen
 import com.example.volunteer.presentation.theme.VolunteerTheme
 import com.example.volunteer.presentation.ui.AppDestinations
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,12 +68,7 @@ fun VolunteerApp() {
                         selected = currentDestination?.hierarchy?.any { it.route == destRoute } == true,
                         onClick = {
                             navController.navigate(destRoute) {
-                                // Correct back stack handling
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
                                 launchSingleTop = true
-                                restoreState = true
                             }
                         }
                     )

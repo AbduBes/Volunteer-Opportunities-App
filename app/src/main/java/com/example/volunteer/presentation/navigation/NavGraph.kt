@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.volunteer.presentation.ui.screens.add.AddQuestScreen
+import com.example.volunteer.presentation.ui.screens.auth.AuthScreen
 import com.example.volunteer.presentation.ui.screens.detail.QuestDetailScreen
 import com.example.volunteer.presentation.ui.screens.home.HomeScreen
 import com.example.volunteer.presentation.ui.screens.profile.ProfileScreen
@@ -20,13 +21,26 @@ fun NavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.HOME.route,
+        startDestination = Screen.AUTH.route,
         modifier = modifier
     ) {
+        // --- Auth (no bottom nav) ---
+
+        composable(route = Screen.AUTH.route) {
+            AuthScreen(
+                onAuthSuccess = {
+                    navController.navigate(Screen.HOME.route) {
+                        popUpTo(Screen.AUTH.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // --- Bottom Nav Destinations ---
+
         composable(route = Screen.HOME.route) {
             HomeScreen(
-                onViewQuestDetail = { questId -> // Only takes 1 argument from HomeScreen
-                    // But we pass 2 arguments to the Route!
+                onViewQuestDetail = { questId ->
                     navController.navigate(Screen.QUEST_DETAIL.createRoute(questId, "Home"))
                 }
             )
@@ -34,17 +48,24 @@ fun NavGraph(
 
         composable(route = Screen.QUESTS.route) {
             QuestsScreen(
-                onListClick = {},
-                onGridClick = {},
-                onViewDetail = { questId -> // Only takes 1 argument from QuestsScreen
+                onViewDetail = { questId ->
                     navController.navigate(Screen.QUEST_DETAIL.createRoute(questId, "Quests"))
                 }
             )
         }
 
         composable(route = Screen.PROFILE.route) {
-            ProfileScreen()
+            ProfileScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onLoggedOut = {
+                    navController.navigate(Screen.AUTH.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
         }
+
+        // --- Detail / Sub-screens (no bottom nav) ---
 
         composable(route = Screen.ADD_QUEST.route) {
             AddQuestScreen(
@@ -52,12 +73,11 @@ fun NavGraph(
             )
         }
 
-        // Navigate with arguments
         composable(
             route = Screen.QUEST_DETAIL.route,
             arguments = listOf(
                 navArgument("questId") { type = NavType.IntType },
-                navArgument("source") { type = NavType.StringType } // Second argument
+                navArgument("source") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val questId = backStackEntry.arguments?.getInt("questId") ?: return@composable
@@ -65,7 +85,7 @@ fun NavGraph(
 
             QuestDetailScreen(
                 questId = questId,
-                source = source, // Pass it to the screen
+                source = source,
                 onBack = { navController.popBackStack() }
             )
         }

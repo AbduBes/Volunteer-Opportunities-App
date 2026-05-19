@@ -4,97 +4,207 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.volunteer.model.Quest
 import com.example.volunteer.presentation.ui.screens.home.components.ActiveQuestCard
 import com.example.volunteer.presentation.ui.screens.home.components.StatCard
-import com.example.volunteer.presentation.viewmodel.HomeViewModel
+import com.example.volunteer.presentation.viewmodel.home.HomeNavigationEvent
+import com.example.volunteer.presentation.viewmodel.home.HomeUiState
+import com.example.volunteer.presentation.viewmodel.home.HomeViewModel
 
 @Composable
 fun HomeScreen(
     onViewQuestDetail: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(vertical = 16.dp)
-    ) {
-        item {
-            Text(
-                text = "Welcome back, ${state.userName} 👋",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Here's your volunteer summary",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                is HomeNavigationEvent.NavigateToQuestDetail -> onViewQuestDetail(event.questId)
+            }
         }
+    }
 
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+    HomeScreenContent(
+        uiState = uiState,
+        onQuestClick = viewModel::onQuestClicked,
+        onDeleteQuest = viewModel::deleteQuest,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun HomeScreenContent(
+    uiState: HomeUiState,
+    onQuestClick: (Int) -> Unit,
+    onDeleteQuest: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var questPendingDelete by remember { mutableStateOf<Quest?>(null) }
+
+    questPendingDelete?.let { quest ->
+        AlertDialog(
+            onDismissRequest = { questPendingDelete = null },
+            title = { Text("Delete Quest") },
+            text = { Text("Are you sure you want to delete \"${quest.title}\"? This action cannot be undone.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteQuest(quest.id)
+                        questPendingDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { questPendingDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    when (uiState) {
+        is HomeUiState.Init,
+        is HomeUiState.Loading -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = androidx.compose.ui.Alignment.Center
             ) {
-                StatCard(
-                    label = "Hours Given",
-                    value = "${state.totalHours}h",
-                    modifier = Modifier.weight(1f)
-                )
-                StatCard(
-                    label = "Quests Done",
-                    value = "${state.questsCompleted}",
-                    modifier = Modifier.weight(1f)
+                CircularProgressIndicator()
+            }
+        }
+        is HomeUiState.Error -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                Text(
+                    text = uiState.message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
         }
-
-        item {
-            Text(
-                text = "Active Quests",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-
-        if (state.activeQuests.isEmpty()) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        contentAlignment = androidx.compose.ui.Alignment.Center
+        is HomeUiState.Success -> {
+            LazyColumn(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(16.dp)
+            ) {
+                item {
+                    Text(
+                        text = "Welcome back, ${uiState.userName} \uD83D\uDC4B",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Here's your volunteer summary",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(
-                            text = "No active quests yet.\nJoin one from the Quests tab!",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        StatCard(
+                            label = "Hours Given",
+                            value = "${uiState.totalHours}h",
+                            modifier = Modifier.weight(1f)
+                        )
+                        StatCard(
+                            label = "Quests Done",
+                            value = "${uiState.questsCompleted}",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                item {
+                    Text(
+                        text = "Active Quests",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                if (uiState.activeQuests.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                contentAlignment = androidx.compose.ui.Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No active quests yet.\nJoin one from the Quests tab!",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(uiState.activeQuests) { quest ->
+                        ActiveQuestCard(quest = quest, onViewDetail = onQuestClick)
+                    }
+                }
+
+                item {
+                    Text(
+                        text = "My Quests",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                if (uiState.createdQuests.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                contentAlignment = androidx.compose.ui.Alignment.Center
+                            ) {
+                                Text(
+                                    text = "You haven't created any quests yet.\nTap + on the Quests tab to add one!",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(uiState.createdQuests) { quest ->
+                        ActiveQuestCard(
+                            quest = quest,
+                            onViewDetail = onQuestClick,
+                            onDelete = { questPendingDelete = quest }
                         )
                     }
                 }
             }
-        }
-        else {
-            items(state.activeQuests) { quest ->
-                 ActiveQuestCard(quest = quest, onViewDetail = onViewQuestDetail)
-             }
         }
     }
 }

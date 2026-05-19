@@ -6,149 +6,168 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.volunteer.presentation.ui.screens.quests.components.QuestItem
-import com.example.volunteer.presentation.viewmodel.QuestsViewModel
+import com.example.volunteer.presentation.viewmodel.quest.QuestsNavigationEvent
+import com.example.volunteer.presentation.viewmodel.quest.QuestsUiState
+import com.example.volunteer.presentation.viewmodel.quest.QuestsViewModel
 
 @Composable
 fun QuestsScreen(
-    onListClick: () -> Unit,
-    onGridClick: () -> Unit,
     onViewDetail: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: QuestsViewModel = viewModel()
+    viewModel: QuestsViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
-    var isGroupedLayout by remember { mutableStateOf(false) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LazyColumn(
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                is QuestsNavigationEvent.NavigateToQuestDetail -> onViewDetail(event.questId)
+            }
+        }
+    }
+
+    QuestsScreenContent(
+        uiState = uiState,
+        onCategorySelected = viewModel::selectCategory,
+        onFavoriteToggled = viewModel::toggleFavorite,
+        onQuestClicked = viewModel::onQuestClicked,
+        onLayoutToggled = viewModel::setGroupedLayout,
         modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(vertical = 16.dp)
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+    )
+}
+
+@Composable
+private fun QuestsScreenContent(
+    uiState: QuestsUiState,
+    onCategorySelected: (String) -> Unit,
+    onFavoriteToggled: (Int) -> Unit,
+    onQuestClicked: (Int) -> Unit,
+    onLayoutToggled: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    when (uiState) {
+        is QuestsUiState.Init,
+        is QuestsUiState.Loading -> {
+            Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        is QuestsUiState.Error -> {
+            Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "Volunteer Quests",
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    text = uiState.message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyLarge
                 )
-
-                // 2. Connect List button
-                IconButton(onClick = {
-                    isGroupedLayout = false
-                    onListClick()
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.List,
-                        contentDescription = "List View",
-                        // Highlight icon if selected
-                        tint = if (!isGroupedLayout) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                    )
-                }
-
-                // 3. Connect Grid/Row button
-                IconButton(onClick = {
-                    isGroupedLayout = true
-                    onGridClick()
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.GridView,
-                        contentDescription = "Grid/Card View",
-                        // Highlight icon if selected
-                        tint = if (isGroupedLayout) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                    )
-                }
             }
         }
-
-        // Category Filter Chips (This counts as your FIRST LazyRow!)
-        item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(viewModel.categories) { category ->
-                    FilterChip(
-                        selected = state.selectedCategory == category,
-                        onClick = { viewModel.selectCategory(category) },
-                        label = { Text(category) }
-                    )
-                }
-            }
-        }
-
-        if (state.allQuests.isEmpty()) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(48.dp),
-                        contentAlignment = Alignment.Center
+        is QuestsUiState.Success -> {
+            LazyColumn(
+                modifier = modifier.fillMaxSize().padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(vertical = 16.dp)
+            ) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "No quests in this category yet.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = "Volunteer Quests",
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
                         )
-                    }
-                }
-            }
-        } else {
-            // 4. Toggle between standard list and grouped rows
-            if (!isGroupedLayout) {
-                // STANDARD LIST LAYOUT
-                items(state.allQuests) { quest ->
-                    QuestItem(
-                        quest = quest,
-                        onFavoriteToggle = { viewModel.toggleFavorite(it) },
-                        onViewDetail = onViewDetail
-                    )
-                }
-            } else {
-                // GROUPED ROWS LAYOUT (Categories)
-                val groupedQuests = state.allQuests.groupBy { it.category }
-
-                groupedQuests.forEach { (category, quests) ->
-                    if (quests.isNotEmpty()) {
-                        // Category Title
-                        item {
-                            Text(
-                                text = category,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                        IconButton(onClick = { onLayoutToggled(false) }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.List,
+                                contentDescription = "List View",
+                                tint = if (!uiState.isGroupedLayout) MaterialTheme.colorScheme.primary else LocalContentColor.current
                             )
                         }
-
-                        item {
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                contentPadding = PaddingValues(bottom = 8.dp)
+                        IconButton(onClick = { onLayoutToggled(true) }) {
+                            Icon(
+                                imageVector = Icons.Default.GridView,
+                                contentDescription = "Grid/Card View",
+                                tint = if (uiState.isGroupedLayout) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                            )
+                        }
+                    }
+                }
+                item {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(uiState.categories) { category ->
+                            FilterChip(
+                                selected = uiState.selectedCategory == category,
+                                onClick = { onCategorySelected(category) },
+                                label = { Text(category) }
+                            )
+                        }
+                    }
+                }
+                if (uiState.allQuests.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(48.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                items(quests) { quest ->
-                                    QuestItem(
-                                        quest = quest,
-                                        onFavoriteToggle = { viewModel.toggleFavorite(it) },
-                                        onViewDetail = onViewDetail,
-                                        modifier = Modifier.width(300.dp)
+                                Text(
+                                    text = "No quests in this category yet.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    if (!uiState.isGroupedLayout) {
+                        items(uiState.allQuests) { quest ->
+                            QuestItem(
+                                quest = quest,
+                                onFavoriteToggle = { onFavoriteToggled(it) },
+                                onViewDetail = onQuestClicked
+                            )
+                        }
+                    } else {
+                        val groupedQuests = uiState.allQuests.groupBy { it.category }
+                        groupedQuests.forEach { (category, quests) ->
+                            if (quests.isNotEmpty()) {
+                                item {
+                                    Text(
+                                        text = category,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                                     )
+                                }
+                                item {
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                        contentPadding = PaddingValues(bottom = 8.dp)
+                                    ) {
+                                        items(quests) { quest ->
+                                            QuestItem(
+                                                quest = quest,
+                                                onFavoriteToggle = { onFavoriteToggled(it) },
+                                                onViewDetail = onQuestClicked,
+                                                modifier = Modifier.width(300.dp)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
