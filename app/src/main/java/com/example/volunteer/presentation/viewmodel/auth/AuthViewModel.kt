@@ -3,9 +3,9 @@ package com.example.volunteer.presentation.viewmodel.auth
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.volunteer.model.data.repository.AccountRepository
-import com.example.volunteer.model.data.repository.AuthResult
-import com.example.volunteer.model.data.session.SessionManager
+import com.example.volunteer.domain.repository.AccountRepository
+import com.example.volunteer.domain.repository.AuthResult
+import com.example.volunteer.model.session.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow

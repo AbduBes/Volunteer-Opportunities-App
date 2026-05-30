@@ -1,10 +1,10 @@
-package com.example.volunteer.model.data.repository
+package com.example.volunteer.domain.repository
 
-import com.example.volunteer.model.data.repository.impl.AccountRepositoryImpl
-import com.example.volunteer.model.data.repository.impl.CategoryRepositoryImpl
-import com.example.volunteer.model.data.repository.impl.OrganizationRepositoryImpl
-import com.example.volunteer.model.data.repository.impl.QuestRepositoryImpl
-import com.example.volunteer.model.data.repository.impl.UserProfileRepositoryImpl
+import com.example.volunteer.model.repository.AccountRepositoryImpl
+import com.example.volunteer.model.repository.CategoryRepositoryImpl
+import com.example.volunteer.model.repository.OrganizationRepositoryImpl
+import com.example.volunteer.model.repository.QuestRepositoryImpl
+import com.example.volunteer.model.repository.UserProfileRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

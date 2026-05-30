@@ -1,6 +1,6 @@
-package com.example.volunteer.model.data.mapper
+package com.example.volunteer.model.mapper
 
-import com.example.volunteer.model.Quest
+import com.example.volunteer.domain.data.Quest
 import com.example.volunteer.model.data.local.dao.QuestWithDetails
 
 fun QuestWithDetails.toQuest() = Quest(

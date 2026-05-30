@@ -1,11 +1,11 @@
-package com.example.volunteer.model.data.repository.impl
+package com.example.volunteer.model.repository
 
 import com.example.volunteer.model.data.local.dao.QuestDao
 import com.example.volunteer.model.data.local.dao.QuestWithDetails
 import com.example.volunteer.model.data.local.dao.UserQuestCrossRefDao
 import com.example.volunteer.model.data.local.entity.QuestEntity
 import com.example.volunteer.model.data.local.entity.UserQuestCrossRef
-import com.example.volunteer.model.data.repository.QuestRepository
+import com.example.volunteer.domain.repository.QuestRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

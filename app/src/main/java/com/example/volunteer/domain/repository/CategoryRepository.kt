@@ -1,4 +1,4 @@
-package com.example.volunteer.model.data.repository
+package com.example.volunteer.domain.repository
 
 import com.example.volunteer.model.data.local.entity.CategoryEntity
 import kotlinx.coroutines.flow.Flow

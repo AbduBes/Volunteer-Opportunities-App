@@ -1,12 +1,12 @@
-package com.example.volunteer.model.data.repository.impl
+package com.example.volunteer.model.repository
 
 import com.example.volunteer.model.data.local.dao.AccountDao
 import com.example.volunteer.model.data.local.dao.UserProfileDao
 import com.example.volunteer.model.data.local.entity.AccountEntity
 import com.example.volunteer.model.data.local.entity.UserProfileEntity
 import com.example.volunteer.model.data.local.util.PasswordHasher
-import com.example.volunteer.model.data.repository.AccountRepository
-import com.example.volunteer.model.data.repository.AuthResult
+import com.example.volunteer.domain.repository.AccountRepository
+import com.example.volunteer.domain.repository.AuthResult
 import javax.inject.Inject
 
 class AccountRepositoryImpl @Inject constructor(

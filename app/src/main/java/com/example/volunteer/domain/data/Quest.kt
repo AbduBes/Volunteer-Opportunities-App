@@ -1,4 +1,4 @@
-package com.example.volunteer.model
+package com.example.volunteer.domain.data
 
 data class Quest(
     val id: Int,
